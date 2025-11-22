@@ -49,6 +49,7 @@ link_color {
   font-family: "Bm-Dohyeon", sans-serif;
 }
 
+/* Línea permanente SOLO si está activo */
 .underline-active::after {
   content: "";
   position: absolute;
@@ -57,7 +58,7 @@ link_color {
   width: 50%;
   height: 2px;
   background-color: currentColor;
-  transform: scaleX(1);
+  transform: scaleX(1); /* Siempre visible */
   transform-origin: left;
   transition: transform 0.3s ease;
 }

@@ -1,0 +1,280 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String
+  name       String?
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tournaments   Tournament[]
+  wallets       Wallet[]
+  tokens        Token[]
+  otpCodes      OtpCode[]
+  files         File[]
+  playerProfile PlayerProfile?
+  clubProfile   ClubProfile?
+  coachProfile  CoachProfile?
+  fanProfile    FanProfile?
+
+  @@map("users")
+}
+
+model Wallet {
+  id                String   @id @default(uuid())
+  address           String   @unique
+  network           String // ethereum, polygon, bsc, polkadot, etc.
+  currency          String // ETH, MATIC, BNB, DOT, etc.
+  provider          String // metamask, coinbase, walletconnect, open league, polkadot, etc.
+  isDefault         Boolean  @default(false)
+  encryptedJson     String? // JSON cifrado de la wallet (para Polkadot)
+  encryptedMnemonic String? // Mnemónico cifrado (para Polkadot)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wallets")
+}
+
+model Token {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  type      TokenType @default(ACCESS)
+  isRevoked Boolean   @default(false)
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tokens")
+}
+
+model OtpCode {
+  id        String   @id @default(uuid())
+  code      String
+  purpose   String // 'wallet_login', 'email_verification', etc.
+  expiresAt DateTime
+  isUsed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otp_codes")
+}
+
+enum TokenType {
+  ACCESS
+  REFRESH
+}
+
+model Tournament {
+  id              String           @id @default(uuid())
+  name            String
+  description     String?
+  prizePool       Float            @default(0)
+  contractAddress String?
+  status          TournamentStatus @default(PENDING)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  organizerId String
+  organizer   User   @relation(fields: [organizerId], references: [id])
+
+  participants Participant[]
+
+  @@map("tournaments")
+}
+
+model Participant {
+  id            String   @id @default(uuid())
+  walletAddress String
+  score         Int      @default(0)
+  rank          Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+
+  @@unique([tournamentId, walletAddress])
+  @@map("participants")
+}
+
+enum TournamentStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model File {
+  id             String     @id @default(uuid())
+  arkaFileId     String     @unique // UUID de Arka CDN
+  originalName   String
+  mimeType       String
+  size           Int
+  description    String?
+  publicUrl      String // URL pública del archivo
+  status         FileStatus @default(PENDING) // pending, processing, completed, failed
+  compressed     Boolean    @default(false)
+  isDashVideo    Boolean    @default(false)
+  totalChunks    Int        @default(0)
+  uploadedChunks Int        @default(0)
+  failedChunks   Int        @default(0)
+  progress       Int        @default(0)
+  lastError      String?
+  retryCount     Int        @default(0)
+  originalSize   Int? // Tamaño original antes de compresión
+  expiresAt      DateTime? // TTL del archivo
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  chunks FileChunk[]
+
+  @@map("files")
+}
+
+model FileChunk {
+  id           String   @id @default(uuid())
+  chunkIndex   Int
+  arkivAddress String
+  size         Int
+  status       String   @default("pending") // pending, uploading, completed, failed
+  txHash       String? // Transaction hash from Arkiv
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  fileId String
+  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@unique([fileId, chunkIndex])
+  @@map("file_chunks")
+}
+
+enum FileStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// ============================================
+// SISTEMA DE PERFILES
+// ============================================
+
+enum ProfileType {
+  PLAYER
+  CLUB
+  COACH
+  FAN
+}
+
+model PlayerProfile {
+  id              String    @id @default(uuid())
+  displayName     String
+  position        String? // Delantero, Medio, Defensa, Portero
+  jerseyNumber    Int?
+  height          Float? // en cm
+  weight          Float? // en kg
+  dateOfBirth     DateTime?
+  nationality     String?
+  biography       String?
+  avatarUrl       String?
+  nftTokenId      String? // Token ID del NFT del jugador
+  contractAddress String? // Dirección del contrato del NFT
+  statistics      Json? // Estadísticas del jugador
+  achievements    Json? // Logros y premios
+  isVerified      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("player_profiles")
+}
+
+model ClubProfile {
+  id           String   @id @default(uuid())
+  clubName     String   @unique
+  shortName    String? // Nombre corto/siglas
+  foundedYear  Int?
+  country      String?
+  city         String?
+  stadium      String?
+  description  String?
+  logoUrl      String?
+  bannerUrl    String?
+  tokenSymbol  String   @unique // Símbolo del token ERC20
+  tokenName    String // Nombre del token
+  tokenAddress String?  @unique // Dirección del contrato ERC20
+  tokenSupply  String? // Supply total del token
+  socialLinks  Json? // Twitter, Instagram, TikTok, etc.
+  isVerified   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("club_profiles")
+}
+
+model CoachProfile {
+  id              String    @id @default(uuid())
+  displayName     String
+  specialty       String? // Técnico, Físico, Porteros, etc.
+  licenseLevel    String? // UEFA Pro, A, B, C
+  yearsExperience Int?
+  dateOfBirth     DateTime?
+  nationality     String?
+  biography       String?
+  avatarUrl       String?
+  achievements    Json? // Equipos dirigidos, títulos, etc.
+  isVerified      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("coach_profiles")
+}
+
+model FanProfile {
+  id             String   @id @default(uuid())
+  displayName    String
+  favoriteClub   String?
+  favoritePlayer String?
+  country        String?
+  avatarUrl      String?
+  biography      String?
+  loyaltyPoints  Int      @default(0)
+  nftCollection  Json? // NFTs coleccionados
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("fan_profiles")
+}

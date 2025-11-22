@@ -84,7 +84,7 @@ export function Footer() {
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-4 pt-8 border-t border-gray-200">
-          <p className="text-sm text-gray-500">©2025 ROAD TO PRO</p>
+          <p className="text-sm text-gray-500">©2025 ROADTOPRO</p>
 
           <nav className="flex flex-wrap items-center gap-6">
             {legalLinks.map((link) => (

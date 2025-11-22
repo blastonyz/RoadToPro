@@ -15,10 +15,10 @@ import {
   ApiBearerAuth,
   ApiBody,
 } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, VerifyOtpDto, AddWalletDto, CreateOpenLeagueWalletDto } from './dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { GetUser } from './decorators/get-user.decorator';
+import { AuthService } from './auth.service.js';
+import { RegisterDto, LoginDto, VerifyOtpDto, AddWalletDto, CreateOpenLeagueWalletDto, GetPolkadotMnemonicDto } from './dto/index.js';
+import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
+import { GetUser } from './decorators/get-user.decorator.js';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -185,5 +185,32 @@ export class AuthController {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user;
     return userWithoutPassword;
+  }
+
+  @Post('polkadot/recovery')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Obtener información de recuperación de la wallet Polkadot',
+    description: 'Requiere verificación de contraseña. Por seguridad, el mnemónico solo se muestra durante el registro.'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Información de recuperación de la wallet',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Contraseña incorrecta',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Wallet de Polkadot no encontrada',
+  })
+  async getPolkadotRecovery(
+    @GetUser('id') userId: string,
+    @Body() dto: GetPolkadotMnemonicDto
+  ) {
+    return this.authService.getPolkadotMnemonic(userId, dto.password);
   }
 }

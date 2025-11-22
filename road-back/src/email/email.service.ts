@@ -16,7 +16,7 @@ export class EmailService {
   constructor(private configService: ConfigService) {
     // Determine which email provider to use
     this.provider = (this.configService.get('EMAIL_PROVIDER') || 'smtp') as EmailProvider;
-    
+
     if (this.provider === 'resend') {
       this.initializeResend();
     } else {
@@ -26,7 +26,7 @@ export class EmailService {
 
   private initializeResend() {
     const apiKey = this.configService.get('RESEND_API_KEY');
-    
+
     if (!apiKey) {
       this.logger.error('RESEND_API_KEY not configured');
       throw new Error('RESEND_API_KEY is required when using Resend provider');

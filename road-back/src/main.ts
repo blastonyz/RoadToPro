@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AppModule } from './app.module';
+import { AppModule } from './app.module.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -25,13 +25,16 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('OpenLeague Backend API')
     .setDescription(
-      'API REST para gestión de torneos con integración blockchain (Hardhat) y base de datos (Prisma)',
+      'API REST para gestión de torneos con integración blockchain (Hardhat), base de datos (Prisma) y almacenamiento descentralizado (Arka CDN / Arkiv Network)',
     )
     .setVersion('1.0')
     .addTag('health', 'Health check endpoints')
     .addTag('auth', 'Autenticación y gestión de usuarios')
     .addTag('users', 'Gestión de usuarios')
+    .addTag('profiles', 'Gestión de perfiles (Jugador, Club, DT, Fan)')
     .addTag('blockchain', 'Interacción con smart contracts')
+    .addTag('upload', 'Subida y gestión de archivos en Arkiv Network')
+    .addTag('data', 'Acceso público a archivos (no requiere autenticación)')
     .addBearerAuth()
     .build();
 
