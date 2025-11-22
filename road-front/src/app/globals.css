@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+link_color {
+  color: #060318;
+}
+
+@font-face {
+  font-family: "Kensmark";
+  src: url("/assets/fonts/Kensmark-03/Kensmark-03-Bold.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kensmark";
+  src: url("/assets/fonts/Kensmark-03/Kensmark-03-BoldSlant.ttf")
+    format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SlamDunk";
+  src: url("/assets/fonts/SlamDunk/SlamDunk.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bm-Dohyeon";
+  src: url("/assets/fonts/Bm-Dohyeon/BMDOHYEON.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-kensmark {
+  font-family: "Kensmark", sans-serif;
+}
+
+.font-slamdunk {
+  font-family: "SlamDunk", sans-serif;
+}
+
+.font-bmdohyeon {
+  font-family: "Bm-Dohyeon", sans-serif;
+}
+
+.underline-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 50%;
+  height: 2px;
+  background-color: currentColor;
+  transform: scaleX(1);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.underline-hover::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 50%;
+  height: 2px;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.underline-hover:hover::after {
+  transform: scaleX(1);
+}
