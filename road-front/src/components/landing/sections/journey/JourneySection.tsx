@@ -4,6 +4,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { SectionTitle } from "../../ui/SectionTitle";
 import { Separator } from "../../ui/Separator";
 import { useRef, useState } from "react";
+import Link from "next/link";
 
 export function JourneySection() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -17,15 +18,15 @@ export function JourneySection() {
   };
 
   return (
-    <section className="relative w-full pb-12 bg-[#0b0d0f]">
+    <section id="journey" className="relative w-full pb-12 bg-[#0b0d0f]">
       <div className="absolute bottom-0 left-0 w-full h-[12%] sm:h-[25%] bg-white" />
-      <Separator index={4} title="Journey" theme="dark" />
+      <Separator index={3} title="Journey" theme="dark" />
 
       <div className="relative w-[92%] sm:w-[87%] md:w-[82%] mx-auto overflow-hidden space-y-12">
         <div className="flex flex-col md:flex-row gap-6 md:gap-0 items-start md:items-center">
           <div className="w-full md:w-1/5 flex justify-end">
             <span className="text-neutral-500 text-sm sm:text-base leading-relaxed">
-              Transfers and latest news from OpenLeague
+              Transfers and latest news from Road To Pro
             </span>
           </div>
 
@@ -41,13 +42,13 @@ export function JourneySection() {
           </div>
 
           <div className="w-full md:w-auto flex justify-end">
-            <button className="flex items-center gap-2 px-6 py-3.5 bg-white text-black rounded-full text-sm font-medium hover:opacity-90 transition-opacity">
+            <Link href="/#journey-video" className="flex items-center gap-2 px-6 py-3.5 bg-white text-black rounded-full text-sm font-medium hover:opacity-90 transition-opacity">
               Watch Now <ArrowRight size={20} />
-            </button>
+            </Link>
           </div>
         </div>
 
-        <div className="flex flex-col space-y-6 items-center justify-center w-full">
+        <div id="journey-video" className="flex flex-col space-y-6 items-center justify-center w-full">
           <div className="flex w-full justify-between items-center">
             <h3 className="text-lg font-medium text-gray-300">Latest Videos</h3>
             <div className="flex gap-2">

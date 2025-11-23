@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
+
 link_color {
   color: #060318;
 }
@@ -49,7 +54,6 @@ link_color {
   font-family: "Bm-Dohyeon", sans-serif;
 }
 
-/* Línea permanente SOLO si está activo */
 .underline-active::after {
   content: "";
   position: absolute;
@@ -58,7 +62,7 @@ link_color {
   width: 50%;
   height: 2px;
   background-color: currentColor;
-  transform: scaleX(1); /* Siempre visible */
+  transform: scaleX(1);
   transform-origin: left;
   transition: transform 0.3s ease;
 }
@@ -78,4 +82,19 @@ link_color {
 
 .underline-hover:hover::after {
   transform: scaleX(1);
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.18s ease-out;
 }

@@ -83,13 +83,13 @@ export function SliderSection() {
             <div className="hidden sm:block flex flex-row flex-nowrap gap-2">
               <button
                 onClick={handlePrev}
-                className="transition-transform hover:scale-110 active:scale-95 hover:text-gray-800"
+                className="cursor-pointer transition-transform hover:scale-110 active:scale-95 hover:text-gray-800"
               >
                 <ChevronLeft size={20} />
               </button>
               <button
                 onClick={handleNext}
-                className="transition-transform hover:scale-110 active:scale-95 hover:text-gray-800"
+                className="cursor-pointer transition-transform hover:scale-110 active:scale-95 hover:text-gray-800"
               >
                 <ChevronRight size={20} />
               </button>

@@ -38,9 +38,9 @@ export function PlayerCard({
           </div>
         </div>
 
-        <button className="flex items-center gap-2 px-5 sm:px-6 py-3 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-100/80 border border-gray-200 transition-colors duration-150">
+        {/* <button className="cursor-pointer flex items-center gap-2 px-5 sm:px-6 py-3 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-100/80 border border-gray-200 transition-colors duration-150">
           Full bio <ArrowRight size={20} />
-        </button>
+        </button> */}
       </div>
 
       <div className="relative mt-auto overflow-hidden">

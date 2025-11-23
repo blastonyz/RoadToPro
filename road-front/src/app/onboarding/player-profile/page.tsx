@@ -1,17 +1,24 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader'
+import { api } from '@/lib/api'
 
 export default function PlayerProfilePage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
+    displayName: '',
     age: '',
     country: '',
     position: '',
+    jerseyNumber: '',
+    height: '',
+    weight: '',
+    dateOfBirth: '',
+    nationality: '',
+    biography: '',
+    avatarUrl: '',
     currentClub: '',
     videoLink: '',
     availability: '',
@@ -40,9 +47,26 @@ export default function PlayerProfilePage() {
     'Otro'
   ]
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    router.push('/onboarding/level-test')
+    try {
+      await api.profiles.createPlayer({
+        displayName: formData.displayName,
+        position: formData.position,
+        jerseyNumber: formData.jerseyNumber ? Number(formData.jerseyNumber) : undefined,
+        height: formData.height ? Number(formData.height) : undefined,
+        weight: formData.weight ? Number(formData.weight) : undefined,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        nationality: formData.nationality || formData.country || undefined,
+        biography: formData.biography || undefined,
+        avatarUrl: formData.avatarUrl || undefined,
+        statistics: {},
+        achievements: {},
+      })
+      router.push('/onboarding/level-test')
+    } catch {
+      router.push('/onboarding/level-test')
+    }
   }
 
   return (
@@ -67,6 +91,20 @@ export default function PlayerProfilePage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="displayName" className="block text-sm font-semibold text-black mb-2">
+                Nombre para mostrar *
+              </label>
+              <input
+                id="displayName"
+                type="text"
+                required
+                value={formData.displayName}
+                onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-black focus:outline-none transition-colors"
+                placeholder="Tu nombre público"
+              />
+            </div>
             <div className="grid sm:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="age" className="block text-sm font-semibold text-black mb-2">
@@ -99,6 +137,48 @@ export default function PlayerProfilePage() {
               </div>
             </div>
 
+            <div className="grid sm:grid-cols-3 gap-6">
+              <div>
+                <label htmlFor="jerseyNumber" className="block text-sm font-semibold text-black mb-2">
+                  Dorsal
+                </label>
+                <input
+                  id="jerseyNumber"
+                  type="number"
+                  value={formData.jerseyNumber}
+                  onChange={(e) => setFormData({ ...formData, jerseyNumber: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-black focus:outline-none transition-colors"
+                  placeholder="Número"
+                />
+              </div>
+              <div>
+                <label htmlFor="height" className="block text-sm font-semibold text-black mb-2">
+                  Altura (cm)
+                </label>
+                <input
+                  id="height"
+                  type="number"
+                  value={formData.height}
+                  onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-black focus:outline-none transition-colors"
+                  placeholder="Ej: 187"
+                />
+              </div>
+              <div>
+                <label htmlFor="weight" className="block text-sm font-semibold text-black mb-2">
+                  Peso (kg)
+                </label>
+                <input
+                  id="weight"
+                  type="number"
+                  value={formData.weight}
+                  onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-black focus:outline-none transition-colors"
+                  placeholder="Ej: 83"
+                />
+              </div>
+            </div>
+
             <div>
               <label htmlFor="position" className="block text-sm font-semibold text-black mb-2">
                 Posición principal *
@@ -117,6 +197,63 @@ export default function PlayerProfilePage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="dateOfBirth" className="block text-sm font-semibold text-black mb-2">
+                  Fecha de nacimiento
+                </label>
+                <input
+                  id="dateOfBirth"
+                  type="date"
+                  value={formData.dateOfBirth}
+                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-black focus:outline-none transition-colors"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="nationality" className="block text-sm font-semibold text-black mb-2">
+                  Nacionalidad
+                </label>
+                <input
+                  id="nationality"
+                  type="text"
+                  value={formData.nationality}
+                  onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-black focus:outline-none transition-colors"
+                  placeholder="Ej: Portugal"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="biography" className="block text-sm font-semibold text-black mb-2">
+                Biografía
+              </label>
+              <textarea
+                id="biography"
+                value={formData.biography}
+                onChange={(e) => setFormData({ ...formData, biography: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-black focus:outline-none transition-colors"
+                placeholder="Cuéntanos sobre ti (opcional)"
+                rows={4}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="avatarUrl" className="block text-sm font-semibold text-black mb-2">
+                URL del avatar
+              </label>
+              <input
+                id="avatarUrl"
+                type="url"
+                value={formData.avatarUrl}
+                onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-black focus:outline-none transition-colors"
+                placeholder="https://... (opcional)"
+              />
             </div>
 
             <div>

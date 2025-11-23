@@ -1,41 +1,198 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DashboardNavbar } from "@/components/dashboard/DashboardNavbar";
 import { Plus } from "lucide-react";
 import { Footer } from "@/components/layout/footer/Footer";
+import { api } from "@/lib/api";
+import { WalletSummary } from "@/components/wallet/WalletSummary";
+import type { Challenge, Notification } from "@/sdk/types";
 
 export default function DashboardPage() {
-  const [notifications] = useState([
+  const [notifications, setNotifications] = useState<
     {
-      id: 1,
-      type: "validation",
-      message: "Tu reto de precisión fue validado por el staff",
-      time: "Hace 2h",
-    },
-    {
-      id: 2,
-      type: "scholarship",
-      message: "Nueva beca disponible para Modo PRO",
-      time: "Hace 5h",
-    },
-    {
-      id: 3,
-      type: "challenge",
-      message: "Tienes 1 reto pendiente para hoy",
-      time: "Hoy",
-    },
-  ]);
+      id: string;
+      title: string;
+      body?: string | null;
+      createdAt: string;
+      read: boolean;
+    }[]
+  >([]);
+  const [me, setMe] = useState<{ name?: string | null; email?: string } | null>(
+    null
+  );
+  const [loadingMe, setLoadingMe] = useState(true);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
+  const [overall, setOverall] = useState<number>(0);
+  const [deltaWeek, setDeltaWeek] = useState<number>(0);
+  const [components, setComponents] = useState<{
+    technical: number;
+    physical: number;
+    commitment: number;
+    transparency: number;
+    reputation: number;
+  } | null>(null);
+  const [stats, setStats] = useState<{
+    completedChallenges: number;
+    currentStreakDays: number;
+    videosUploaded: number;
+    globalRank: number | null | undefined;
+  }>({
+    completedChallenges: 0,
+    currentStreakDays: 0,
+    videosUploaded: 0,
+    globalRank: null,
+  });
+
+  const [todayChallenges, setTodayChallenges] = useState<
+    { id: string; title: string; status: string; createdAt: string }[]
+  >([]);
+  const [todayChallengesLoading, setTodayChallengesLoading] = useState(true);
+  const [todayChallengesError, setTodayChallengesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const user = await api.auth.me();
+        if (mounted) setMe(user);
+      } catch {
+        // noop
+      } finally {
+        if (mounted) setLoadingMe(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoadingNotifications(true);
+        const list = await api.notifications.list();
+        if (!mounted) return;
+        const isArray = (v: unknown): v is Notification[] => Array.isArray(v);
+        const getKey = (
+          obj: unknown,
+          key: "items" | "data" | "results"
+        ): unknown => {
+          return obj && typeof obj === "object"
+            ? (obj as Record<string, unknown>)[key]
+            : undefined;
+        };
+        let normalized: Notification[] = [];
+        if (isArray(list)) normalized = list;
+        else if (isArray(getKey(list, "items")))
+          normalized = getKey(list, "items") as Notification[];
+        else if (isArray(getKey(list, "data")))
+          normalized = getKey(list, "data") as Notification[];
+        else if (isArray(getKey(list, "results")))
+          normalized = getKey(list, "results") as Notification[];
+        setNotifications(
+          normalized.map((n: Notification) => ({
+            id: n.id ?? "",
+            title: n.title ?? "",
+            body: n.body ?? "",
+            createdAt: n.createdAt ?? "",
+            read: n.read ?? false,
+          }))
+        );
+      } catch (err) {
+        console.error(err);
+        if (mounted) setLoadingNotifications(false);
+      } finally {
+        if (mounted) setLoadingNotifications(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const normalizeChallenges = (input: unknown): Challenge[] => {
+    if (Array.isArray(input)) return input as Challenge[];
+    if (input && typeof input === "object") {
+      const obj = input as { data?: unknown; items?: unknown };
+      if (Array.isArray(obj.data)) return obj.data as Challenge[];
+      if (Array.isArray(obj.items)) return obj.items as Challenge[];
+    }
+    return [];
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setTodayChallengesLoading(true);
+        const list = await api.challenges.list();
+        if (!mounted) return;
+        const items = normalizeChallenges(list);
+        setTodayChallenges(
+          items.map((c) => ({
+            id: c.id,
+            title: c.title,
+            status: c.status,
+            createdAt: c.createdAt,
+          }))
+        );
+      } catch (e) {
+        console.log(e);
+        if (mounted) setTodayChallengesError("No se pudieron cargar los retos.");
+      } finally {
+        if (mounted) setTodayChallengesLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const score = await api.players.getScore();
+        if (!mounted) return;
+        setOverall(Math.round(score.overall ?? 0));
+        setDeltaWeek(Math.round(score.deltaWeek ?? 0));
+        setComponents(score.components ?? null);
+      } catch {
+        // deja valores por defecto
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const s = await api.dashboard.getMyStats();
+        if (!mounted) return;
+        setStats({
+          completedChallenges: s.completedChallenges ?? 0,
+          currentStreakDays: s.currentStreakDays ?? 0,
+          videosUploaded: s.videosUploaded ?? 0,
+          globalRank: s.globalRank,
+        });
+      } catch {
+        // noop
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-white space-y-12">
       <DashboardNavbar
-        link={{
-          label: "Subir Video",
-          href: "/dashboard/challenges/upload",
-          icon: <Plus />,
-        }}
         returnData={{
           label: "Volver al inicio",
           href: "/",
@@ -46,6 +203,12 @@ export default function DashboardPage() {
         <h2 className="text-4xl font-bold text-black uppercase font-kensmark mb-6">
           Tu centro de alto rendimiento
         </h2>
+        {!loadingMe && (
+          <p className="text-gray-600 mb-4">
+            Bienvenido
+            {me?.name ? `, ${me.name}` : me?.email ? `, ${me.email}` : ""}.
+          </p>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-gradient-to-br from-gray-900 to-black text-white p-6 sm:p-8 rounded-2xl">
@@ -55,16 +218,24 @@ export default function DashboardPage() {
                     Nivel Actual
                   </p>
                   <div className="flex items-baseline gap-3">
-                    <span className="text-6xl sm:text-7xl font-bold">78</span>
+                    <span className="text-6xl sm:text-7xl font-bold">
+                      {overall}
+                    </span>
                     <span className="text-2xl text-gray-400">/100</span>
                   </div>
                   <p className="text-gray-400 mt-2">
-                    Categoría: Semi-Profesional
+                    Categoría:{" "}
+                    {overall >= 85
+                      ? "Profesional"
+                      : overall >= 70
+                      ? "Semi-Profesional"
+                      : "Base"}
                   </p>
                 </div>
                 <div className="bg-white/10 px-6 py-3 rounded-full">
                   <span className="text-green-400 font-bold text-lg">
-                    +3 esta semana
+                    {deltaWeek >= 0 ? `+${deltaWeek}` : `${deltaWeek}`} esta
+                    semana
                   </span>
                 </div>
               </div>
@@ -72,10 +243,26 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
-                { name: "Habilidad", value: 82, color: "bg-blue-500" },
-                { name: "Compromiso", value: 75, color: "bg-green-500" },
-                { name: "Transparencia", value: 90, color: "bg-purple-500" },
-                { name: "Reputación", value: 68, color: "bg-orange-500" },
+                {
+                  name: "Habilidad",
+                  value: Math.round(components?.technical ?? 0),
+                  color: "bg-blue-500",
+                },
+                {
+                  name: "Compromiso",
+                  value: Math.round(components?.commitment ?? 0),
+                  color: "bg-green-500",
+                },
+                {
+                  name: "Transparencia",
+                  value: Math.round(components?.transparency ?? 0),
+                  color: "bg-purple-500",
+                },
+                {
+                  name: "Reputación",
+                  value: Math.round(components?.reputation ?? 0),
+                  color: "bg-orange-500",
+                },
               ].map((pillar) => (
                 <div key={pillar.name} className="bg-gray-50 p-4 rounded-xl">
                   <p className="text-gray-600 text-xs uppercase tracking-wider mb-2">
@@ -99,38 +286,27 @@ export default function DashboardPage() {
                 <h2 className="text-2xl font-bold text-black uppercase">
                   Retos de Hoy
                 </h2>
-                <Link
-                  href="/dashboard/challenges"
-                  className="text-sm font-bold text-gray-600 hover:text-black transition-colors"
-                >
-                  Ver todos
-                </Link>
+                <div className="flex items-center gap-3">
+                  <Link
+                    href="/dashboard/explore"
+                    className="text-sm font-bold text-white bg-black px-4 py-2 rounded-full hover:bg-gray-900 transition-colors"
+                  >
+                    Explorar y calificar
+                  </Link>
+                  <Link
+                    href="/dashboard/challenges"
+                    className="text-sm font-bold text-gray-600 hover:text-black transition-colors"
+                  >
+                    Ver todos
+                  </Link>
+                </div>
               </div>
               <div className="space-y-4">
-                {[
-                  {
-                    title: "Control orientado",
-                    type: "Técnica",
-                    status: "pending",
-                    points: 50,
-                  },
-                  {
-                    title: "Sprint 40m",
-                    type: "Física",
-                    status: "completed",
-                    points: 30,
-                  },
-                  {
-                    title: "Toma de decisiones",
-                    type: "Táctica",
-                    status: "pending",
-                    points: 40,
-                  },
-                ].map((challenge, idx) => (
+                {todayChallenges.map((challenge, idx) => (
                   <div
                     key={idx}
                     className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl ${
-                      challenge.status === "completed"
+                      challenge.status === "COMPLETED"
                         ? "bg-green-50 border border-green-200"
                         : "bg-gray-50"
                     }`}
@@ -138,12 +314,12 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-4">
                       <div
                         className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                          challenge.status === "completed"
+                          challenge.status === "COMPLETED"
                             ? "bg-green-500"
                             : "bg-gray-300"
                         }`}
                       >
-                        {challenge.status === "completed" ? (
+                        {challenge.status === "COMPLETED" ? (
                           <svg
                             className="w-6 h-6 text-white"
                             fill="currentColor"
@@ -175,12 +351,16 @@ export default function DashboardPage() {
                         <h3 className="font-bold text-black">
                           {challenge.title}
                         </h3>
-                        <p className="text-sm text-gray-600">
-                          {challenge.type} • +{challenge.points} puntos
+                        <p className="text-sm text-gray-600 capitalize">
+                          {challenge.status === "PENDING"
+                            ? "Pendiente"
+                            : challenge.status === "COMPLETED"
+                            ? "Completado"
+                            : challenge.status.toLowerCase()}
                         </p>
                       </div>
                     </div>
-                    {challenge.status === "pending" && (
+                    {challenge.status === "PENDING" && (
                       <Link
                         href="/dashboard/challenges/upload"
                         className="bg-black text-white px-6 py-2 rounded-full font-bold text-sm hover:bg-gray-900 transition-colors text-center"
@@ -228,46 +408,56 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-6">
-            <div className="bg-black text-white p-6 rounded-2xl">
-              <p className="text-gray-400 text-sm uppercase tracking-wider mb-3">
-                Tu Wallet
-              </p>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-gray-400 text-sm">Tokens OL</p>
-                  <p className="text-3xl font-bold">1,250</p>
-                </div>
-                <div>
-                  <p className="text-gray-400 text-sm">Valor estimado</p>
-                  <p className="text-xl font-bold">$125.00 USD</p>
-                </div>
-                <button className="w-full bg-white text-black px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors">
-                  Ver detalles
-                </button>
-              </div>
-            </div>
+            <WalletSummary />
 
             <div className="bg-white border border-gray-200 rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-black uppercase">
                   Notificaciones
                 </h3>
+                <Link
+                  href="/dashboard/notifications"
+                  className="text-xs font-bold text-gray-600 hover:text-black transition-colors"
+                >
+                  Ver todas
+                </Link>
                 <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                   {notifications.length}
                 </span>
               </div>
               <div className="space-y-3">
-                {notifications.map((notif) => (
-                  <div
-                    key={notif.id}
-                    className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                  >
+                {loadingNotifications && (
+                  <div className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
                     <p className="text-sm font-semibold text-black">
-                      {notif.message}
+                      Cargando notificaciones...
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
                   </div>
-                ))}
+                )}
+                {notifications && notifications.length > 0 ? (
+                  notifications.map((notif) => (
+                    <div
+                      key={notif.id}
+                      className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                    >
+                      <p className="text-sm font-semibold text-black">
+                        {notif.title}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(notif.createdAt).toLocaleString("es-AR", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-sm text-center py-4">
+                    No hay notificaciones
+                  </p>
+                )}
               </div>
             </div>
 
@@ -280,19 +470,29 @@ export default function DashboardPage() {
                   <span className="text-gray-600 text-sm">
                     Retos completados
                   </span>
-                  <span className="font-bold text-black">47</span>
+                  <span className="font-bold text-black">
+                    {stats.completedChallenges}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 text-sm">Racha actual</span>
-                  <span className="font-bold text-black">12 días</span>
+                  <span className="font-bold text-black">
+                    {stats.currentStreakDays} días
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 text-sm">Videos subidos</span>
-                  <span className="font-bold text-black">89</span>
+                  <span className="font-bold text-black">
+                    {stats.videosUploaded}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 text-sm">Ranking global</span>
-                  <span className="font-bold text-black">#2,341</span>
+                  <span className="font-bold text-black">
+                    {typeof stats.globalRank === "number"
+                      ? `#${stats.globalRank.toLocaleString("es-AR")}`
+                      : "-"}
+                  </span>
                 </div>
               </div>
             </div>

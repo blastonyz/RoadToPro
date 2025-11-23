@@ -3,6 +3,7 @@
 import { ChevronRight, Play } from "lucide-react";
 import { TeamsCard } from "./cards/TeamsCard";
 import { CommunityCard } from "./cards/CommunityCard";
+import Link from "next/link";
 
 export function HeroSection() {
   return (
@@ -55,17 +56,17 @@ export function HeroSection() {
             </div>
 
             <div className="flex flex-wrap gap-4 items-center justify-center">
-              <button className="bg-black text-white px-8 py-4 h-fit rounded-full font-medium flex items-center gap-2 hover:bg-black/90 transition-colors">
+              <Link href="/onboarding" className="cursor-pointer bg-black text-white px-8 py-4 h-fit rounded-full font-medium flex items-center gap-2 hover:bg-black/90 transition-colors">
                 Join us
                 <ChevronRight />
-              </button>
+              </Link>
 
-              <button className="px-8 py-4 font-medium flex items-center gap-3 hover:bg-accent transition-colors">
-                <div className="bg-gray-200/60 p-2.5 rounded-full">
+              <Link href="/#journey" className="group hover:underline cursor-pointer px-8 py-4 font-medium flex items-center gap-3 hover:bg-accent transition-colors">
+                <div className="group-hover:bg-gray-200 bg-gray-200/60 p-2.5 rounded-full">
                   <Play size={18} />
                 </div>
                 Watch Video
-              </button>
+              </Link>
             </div>
           </div>
           <CommunityCard />

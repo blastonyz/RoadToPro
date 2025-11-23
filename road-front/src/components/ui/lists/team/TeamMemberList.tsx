@@ -8,7 +8,7 @@ interface TeamMembersListProps {
 
 const TeamMembersList: React.FC<TeamMembersListProps> = ({
   team = [],
-  tooltipEnabled = true,
+  tooltipEnabled = false,
 }) => {
   const maxVisibleMembers = 3;
   const displayedMembers = team.slice(0, maxVisibleMembers);

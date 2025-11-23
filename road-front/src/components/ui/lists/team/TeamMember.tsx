@@ -44,7 +44,7 @@ const TeamMember: React.FC<TeamMemberProps> = ({
   return (
     <div className="relative inline-block">
       <div
-        className="rounded-full text-white flex items-center justify-center text-xs font-medium border-2 border-white group relative cursor-pointer"
+        className="rounded-full text-white flex items-center justify-center text-xs font-medium border-2 border-white group relative"
         style={{ width: `${size}rem`, height: `${size}rem` }}
         title={tooltipEnabled ? name : ""}
         role="img"

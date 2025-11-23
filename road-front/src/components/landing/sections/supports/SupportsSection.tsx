@@ -4,20 +4,33 @@ import { SectionTitle } from "../../ui/SectionTitle";
 export function SupportsSection() {
   const partners = [
     {
-      name: "WorldCoin",
-      logo: "/assets/images/Worldcoin_Logo.png",
+      name: "Arka CDN",
+      logo: "/assets/images/arca.png",
       width: 1200,
       height: 457,
     },
     {
-      name: "WorldCoin",
-      logo: "/assets/images/Worldcoin_Logo.png",
+      name: "Cloudy Coding",
+      logo: "/assets/images/cloudy.png",
       width: 1200,
       height: 457,
     },
     {
-      name: "WorldCoin",
-      logo: "/assets/images/Worldcoin_Logo.png",
+      name: "Arkiv",
+      logo: "/assets/images/arkiv.png",
+      width: 1200,
+      height: 457,
+    },
+    {
+      name: "Salta Dev",
+      logo: "/assets/images/saltadev.webp",
+      width: 1200,
+      height: 457,
+    },
+
+    {
+      name: "Fudio",
+      logo: "/assets/images/fudio.png",
       width: 1200,
       height: 457,
     },

@@ -3,23 +3,23 @@ import { Mail, ArrowUpRight } from "lucide-react";
 export function Footer() {
   const mainLinks = [
     { label: "HOME", href: "/" },
-    { label: "BECOME A MEMBER", href: "/become-member" },
-    { label: "TEAM MEMBERS", href: "/team-members" },
-    { label: "MATCHES", href: "/matches" },
+    // { label: "BECOME A MEMBER", href: "/become-member" },
+    // { label: "TEAM MEMBERS", href: "/team-members" },
+    // { label: "MATCHES", href: "/matches" },
   ];
 
   const socialLinks = [
     { label: "Twitter", href: "#" },
-    { label: "Facebook", href: "#" },
-    { label: "Instagram", href: "#" },
+    // { label: "Facebook", href: "#" },
+    { label: "Instagram", href: "https://www.instagram.com/openleague.pro" },
     { label: "LinkedIn", href: "#" },
-    { label: "TikTok", href: "#" },
+    // { label: "TikTok", href: "#" },
   ];
 
-  const legalLinks = [
-    { label: "Imprint", href: "#" },
-    { label: "Privacy policy", href: "#" },
-    { label: "Cookies", href: "#" },
+  const legalLinks: Array<{ label: string, href: string }> = [
+    // { label: "Imprint", href: "#" },
+    // { label: "Privacy policy", href: "#" },
+    // { label: "Cookies", href: "#" },
   ];
 
   return (
@@ -56,7 +56,7 @@ export function Footer() {
           <div className="max-w-md">
             <span className="font-kensmark font-bold text-xl">Road To Pro</span>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Driven by passion, united by purpose, SportsLeague is built on
+              Driven by passion, united by purpose, RoadToPro is built on
               grit, loyalty, and the dream of footballing greatness.
             </p>
           </div>
@@ -78,7 +78,7 @@ export function Footer() {
         <div className="relative overflow-hidden mb-8">
           <div className="flex items-center justify-center">
             <span className="text-center font-kensmark text-[100px] md:text-[140px] lg:text-[180px] font-black opacity-30">
-              Road To Pro
+              Roan To Pro
             </span>
           </div>
         </div>

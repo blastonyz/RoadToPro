@@ -7,22 +7,22 @@ import { MilestoneArc } from "./MilestoneArc";
 export function RoadmapSection() {
   const milestones = [
     {
-      title: "2021",
+      title: "Sub 0 Hackathon",
       description:
         "The year our story began. We established the club's foundation, defined our philosophy, recruited passionate talent, and played our first local friendlies.",
     },
     {
-      title: "2022",
+      title: "EthGlobal Hackathon",
       description:
         "Entered our first official league. Focused on building team chemistry, tactical discipline, and gaining vital match experience.",
     },
     {
-      title: "2023",
+      title: "Milestone 2",
       description:
         "Launched our youth academy to nurture local talent. Strengthened the coaching staff and secured key signings.",
     },
     {
-      title: "2024",
+      title: "Incubation",
       description:
         "Our most ambitious year yet. Competing for promotion, expanding our fanbase, and setting our sights on becoming a household name.",
     },
@@ -30,7 +30,7 @@ export function RoadmapSection() {
 
   return (
     <section className="relative w-full pt-12 pb-24 bg-[#0b0d0f]">
-      <Separator index={6} title="Roadmap" theme="dark"></Separator>
+      <Separator index={5} title="Roadmap" theme="dark"></Separator>
       <div className="relative w-[91%] sm:w-[86%] md:w-[81%] mx-auto overflow-hidden space-y-16">
         <div className="grid grid-cols-1 md:grid-cols-2 px-[1%] gap-10 md:gap-0">
           <div className="flex md:justify-end max-w-full md:max-w-[75%]">

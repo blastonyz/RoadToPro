@@ -22,27 +22,27 @@ export function MembersSection() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const players: Player[] = [
     {
-      name: "HARRY KANE",
+      name: "Armando Herrera",
       position: "Defender",
       goals: 23,
-      imageUrl: "/assets/images/player.png",
+      imageUrl: "/assets/images/aaa.png",
       jerseyNumber: "09",
       category: "Footballers",
     },
     {
-      name: "KYLIAN MBAPPE",
+      name: "Andrés Villalva",
       position: "Forward",
       goals: 63,
-      imageUrl: "/assets/images/player.png",
-      jerseyNumber: "07",
+      imageUrl: "/assets/images/bbb.png",
+      jerseyNumber: "13",
       category: "Footballers",
     },
     {
-      name: "KARIM BENZEMA",
+      name: "Juan Guerrero",
       position: "Left Winger",
       goals: 12,
-      imageUrl: "/assets/images/player.png",
-      jerseyNumber: "09",
+      imageUrl: "/assets/images/ccc.png",
+      jerseyNumber: "17",
       category: "Footballers",
     },
   ];
@@ -79,12 +79,11 @@ export function MembersSection() {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`
+                className={`cursor-pointer
                   flex items-center gap-2 px-6 py-3.5 rounded-full text-sm font-medium transition whitespace-nowrap
-                  ${
-                    selectedCategory === cat
-                      ? "bg-[#060318] text-white hover:opacity-90"
-                      : "bg-white text-black border border-gray-200 hover:bg-gray-100/80"
+                  ${selectedCategory === cat
+                    ? "bg-[#060318] text-white hover:opacity-90"
+                    : "bg-white text-black border border-gray-200 hover:bg-gray-100/80"
                   }
                 `}
               >

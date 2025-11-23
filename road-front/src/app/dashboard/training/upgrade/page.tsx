@@ -55,7 +55,7 @@ export default function UpgradeTrainingPage() {
               ))}
             </ul>
             <button className="cursor-pointer w-full bg-white text-black px-8 py-4 rounded-full font-bold hover:bg-gray-100 transition-colors">
-              Suscribirme a PRO
+              Solicitar beca
             </button>
           </div>
 

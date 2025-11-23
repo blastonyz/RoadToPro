@@ -21,12 +21,12 @@ export default function Home() {
       <SliderSection></SliderSection>
       <Separator index={1} title="Sponsors"></Separator>
       <SupportsSection></SupportsSection>
-      <Separator index={2} title="Matches"></Separator>
-      <MatchesSection></MatchesSection>
-      <Separator index={3} title="Members"></Separator>
+      {/* <Separator index={2} title="Matches"></Separator> */}
+      {/* <MatchesSection></MatchesSection> */}
+      <Separator index={2} title="Members"></Separator>
       <MembersSection></MembersSection>
       <JourneySection></JourneySection>
-      <Separator index={5} title="Socials"></Separator>
+      <Separator index={4} title="Socials"></Separator>
       <SocialsSection></SocialsSection>
       <RoadmapSection></RoadmapSection>
       <FoundersSection></FoundersSection>

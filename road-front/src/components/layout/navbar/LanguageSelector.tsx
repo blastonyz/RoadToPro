@@ -2,7 +2,7 @@
 
 import { translations } from "@/i18n/Translations";
 import { ChevronDown } from "lucide-react";
-import { useState, createContext, useContext, ReactNode, useEffect } from "react";
+import { useState, createContext, useContext, ReactNode, useEffect, useRef } from "react";
 
 type AvailableLanguages = "es" | "en";
 export type Translations = {
@@ -26,8 +26,17 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     if (typeof window === "undefined") return;
     const stored = localStorage.getItem("app-language") as AvailableLanguages;
     if (stored && stored !== language) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setLanguage(stored)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLanguage(stored);
+      return;
+    }
+    if (!stored) {
+      const browserLang =
+        (navigator.language?.slice(0, 2) as AvailableLanguages) || "en";
+      const normalized =
+        browserLang === "es" || browserLang === "en" ? browserLang : "en";
+      setLanguage(normalized);
+      localStorage.setItem("app-language", normalized);
     }
   }, [language]);
   const changeLanguage = (lang: AvailableLanguages) => {
@@ -38,6 +47,12 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const t = (key: string) => translations[language][key] || key;
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = language;
+    }
+  }, [language]);
 
   return (
     <LanguageContext.Provider
@@ -59,35 +74,75 @@ export const LanguageSelector = () => {
   const { language, setLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
 
-  const languages: AvailableLanguages[] = ["es", "en"];
+  const selectorRef = useRef<HTMLDivElement | null>(null);
+
+  const languages: { code: "es" | "en"; label: string }[] = [
+    { code: "es", label: "Español" },
+    { code: "en", label: "English" },
+  ];
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (selectorRef.current && !selectorRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("mousedown", handler);
+    return () => window.removeEventListener("mousedown", handler);
+  }, []);
 
   return (
-    <div className="relative inline-block px-4 py-2.5 border rounded-full border-gray-200">
+    <div ref={selectorRef} className="relative inline-block">
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-muted-foreground transition-colors"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="
+          cursor-pointer flex items-center gap-2 
+          px-4 py-2.5 
+          rounded-full border border-gray-300 
+          bg-white 
+          text-sm font-medium text-gray-700
+          hover:bg-gray-100 transition-all duration-200
+          focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none
+        "
       >
         {language.toUpperCase()}
-        <ChevronDown className="w-4 h-4" />
+        <ChevronDown
+          className={`w-4 h-4 transition-transform ${
+            isOpen ? "rotate-180" : "rotate-0"
+          }`}
+        />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg overflow-hidden z-10 border border-border">
-          {languages.map((lang) => (
+        <div
+          className="
+            absolute right-0 mt-3 
+            w-44 bg-white 
+            rounded-xl shadow-xl border border-gray-200 
+            overflow-hidden z-50
+            animate-fade-in ring-1 ring-black/5
+          "
+        >
+          {languages.map(({ code, label }) => (
             <button
-              key={lang}
+              key={code}
               onClick={() => {
-                setLanguage(lang);
+                setLanguage(code);
                 setIsOpen(false);
               }}
-              className={`w-full text-left px-4 py-3 text-sm transition-all duration-200 ${
-                language === lang
-                  ? "text-primary font-medium cursor-not-allowed bg-secondary"
-                  : "text-foreground hover:bg-secondary cursor-pointer"
-              }`}
-              disabled={language === lang}
+              disabled={code === language}
+              className={`
+                w-full text-left px-4 py-3 
+                text-sm transition-all duration-150
+                focus-visible:outline-none focus-visible:bg-gray-100
+                ${
+                  code === language
+                    ? "bg-gray-100 text-gray-600 font-medium cursor-not-allowed"
+                    : "cursor-pointer text-gray-700 hover:bg-gray-100"
+                }
+              `}
             >
-              {lang === "es" ? "Español" : "English"}
+              {label}
             </button>
           ))}
         </div>

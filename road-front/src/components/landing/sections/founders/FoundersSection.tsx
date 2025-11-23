@@ -4,11 +4,12 @@ import { ArrowRight } from "lucide-react";
 import { SectionTitle } from "../../ui/SectionTitle";
 import { Separator } from "../../ui/Separator";
 import { FounderCard } from "./FounderCard";
+import Link from "next/link";
 
 export function FoundersSection() {
   return (
-    <section className="relative w-full pb-12 bg-gray-100">
-      <Separator index={7} title="Founders" theme="extralight" />
+    <section id="founders" className="relative w-full pb-12 bg-gray-100">
+      <Separator index={6} title="Founders" theme="extralight" />
 
       <div className="relative w-[90%] sm:w-[85%] md:w-[80%] mx-auto overflow-hidden space-y-12">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-0">
@@ -31,32 +32,32 @@ export function FoundersSection() {
             />
           </div>
 
-          <div className="order-3">
-            <button className="cursor-pointer flex items-center gap-2 px-6 py-3 bg-[#060318] text-white rounded-full text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap">
+          {/* <div className="order-3">
+            <Link href="/#founders" className="cursor-pointer flex items-center gap-2 px-6 py-3 bg-[#060318] text-white rounded-full text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap">
               Learn more <ArrowRight size={18} />
-            </button>
-          </div>
+            </Link>
+          </div> */}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <FounderCard
-            role="Founder - CEO"
-            name="Jason Harrison"
-            description="A lifelong football strategist with a passion for grassroots development."
-            image="/assets/images/pfp1.jpeg"
+            role="Co-Founder - CMO"
+            name="Mariano Velarde"
+            description="Marketing guru with a knack for building strong community connections."
+            image="https://arkacdn.cloudycoding.com/api/data/b248225b-0e79-4434-b1b0-e05ff4d4623a"
           />
-          <FounderCard
+          {/* <FounderCard
             role="Founder - CEO"
             name="Jason Harrison"
             description="A lifelong football strategist with a passion for grassroots development."
             image="/assets/images/pfp2.png"
             direction="up"
-          />
+          /> */}
           <FounderCard
-            role="Founder - CEO"
-            name="Jason Harrison"
-            description="A lifelong football strategist with a passion for grassroots development."
-            image="/assets/images/pfp3.png"
+            role="Co-Founder - CTO"
+            name="Blas Zamora"
+            description="Tech visionary driving innovation at the intersection of sports and technology."
+            image="https://arkacdn.cloudycoding.com/api/data/41185e23-5d23-47b1-a6f2-4dfcd87bddde"
           />
         </div>
       </div>

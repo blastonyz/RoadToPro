@@ -96,11 +96,6 @@ export default function TrainingPage() {
   return (
     <div className="min-h-screen bg-white space-y-12">
       <DashboardNavbar
-        link={{
-          label: "Subir Video",
-          href: "/dashboard/challenges/upload",
-          icon: <Plus />,
-        }}
         returnData={{
           label: "Volver al panel",
           href: "/dashboard",
@@ -231,7 +226,7 @@ export default function TrainingPage() {
               </h2>
               <p className="text-yellow-50">
                 Acceso completo a todas las herramientas profesionales.
-                Disponible por suscripción mensual o mediante becas.
+                Disponible únicamente mediante becas.
               </p>
             </div>
 
@@ -271,65 +266,6 @@ export default function TrainingPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
-              <div className="bg-white border-2 border-gray-200 rounded-2xl p-8">
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-black mb-2">
-                    Suscripción Mensual
-                  </h3>
-                  <div className="flex items-baseline justify-center gap-2">
-                    <span className="text-5xl font-bold text-black">$29</span>
-                    <span className="text-gray-500">/mes</span>
-                  </div>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-center gap-3">
-                    <svg
-                      className="w-5 h-5 text-green-500"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <span>Acceso completo a Modo PRO</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <svg
-                      className="w-5 h-5 text-green-500"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <span>Cancela cuando quieras</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <svg
-                      className="w-5 h-5 text-green-500"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <span>Soporte prioritario</span>
-                  </li>
-                </ul>
-                <button className="cursor-pointer w-full bg-black text-white px-6 py-4 rounded-full font-bold hover:bg-gray-900 transition-colors">
-                  Suscribirse ahora
-                </button>
-              </div>
-
               <div className="bg-gradient-to-br from-purple-600 to-blue-600 text-white rounded-2xl p-8">
                 <div className="text-center mb-6">
                   <div className="inline-block bg-yellow-400 text-black px-4 py-1 rounded-full text-sm font-bold mb-4">
@@ -386,6 +322,64 @@ export default function TrainingPage() {
                 </ul>
                 <button className="cursor-pointer w-full bg-white text-black px-6 py-4 rounded-full font-bold hover:bg-gray-100 transition-colors">
                   Solicitar beca
+                </button>
+              </div>
+
+              <div className="bg-white border-2 border-gray-200 rounded-2xl p-8">
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl font-bold text-black mb-2">
+                    ¿Cómo obtener la beca?
+                  </h3>
+                  <p className="text-gray-600">
+                    Mantén constancia en tus retos y entrenamientos, y completa tu perfil.
+                  </p>
+                </div>
+                <ul className="space-y-3 mb-8">
+                  <li className="flex items-center gap-3">
+                    <svg
+                      className="w-5 h-5 text-green-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span>Compromiso sostenido</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg
+                      className="w-5 h-5 text-green-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span>Evidencias verificadas</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg
+                      className="w-5 h-5 text-green-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span>Perfil completo y validado</span>
+                  </li>
+                </ul>
+                <button className="cursor-pointer w-full bg-black text-white px-6 py-4 rounded-full font-bold hover:bg-gray-900 transition-colors">
+                  Ver requisitos
                 </button>
               </div>
             </div>

@@ -3,11 +3,40 @@
 import { DashboardNavbar } from "@/components/dashboard/DashboardNavbar";
 import { Footer } from "@/components/layout/footer/Footer";
 import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 
 export default function ProPlanPage() {
-  const overallScore = 78;
-  const maintainedDays = 24;
-  const unlocked = overallScore >= 70 && maintainedDays >= 30;
+  const [overallScore, setOverallScore] = useState<number>(0);
+  const [maintainedDays, setMaintainedDays] = useState<number>(0);
+  const [unlocked, setUnlocked] = useState<boolean>(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [score, level] = await Promise.all([
+          api.players.getScore(),
+          api.players.getLevel(),
+        ]);
+        if (!mounted) return;
+        setOverallScore(Math.round(score.overall ?? 0));
+        const sustainedSince = level.sustainedSince ? new Date(level.sustainedSince) : null;
+        const today = new Date();
+        const days =
+          sustainedSince && !isNaN(sustainedSince.getTime())
+            ? Math.max(0, Math.floor((today.getTime() - sustainedSince.getTime()) / (1000 * 60 * 60 * 24)))
+            : 0;
+        setMaintainedDays(days);
+        setUnlocked(level.sustainedEligibility === true && (score.overall ?? 0) >= 70 && days >= 30);
+      } catch {
+        // noop
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const evaluationItems = [
     "Análisis de tus videos",
@@ -36,11 +65,6 @@ export default function ProPlanPage() {
   return (
     <div className="min-h-screen bg-white space-y-12">
       <DashboardNavbar
-        link={{
-          label: "Subir Video",
-          href: "/dashboard/challenges/upload",
-          icon: <Plus />,
-        }}
         returnData={{ label: "Volver al panel", href: "/dashboard" }}
       />
 
@@ -156,7 +180,7 @@ export default function ProPlanPage() {
                 <span className="text-xl font-bold text-black">${total}</span>
               </div>
               <button className="cursor-pointer w-full mt-6 bg-black text-white px-6 py-3 rounded-full font-bold hover:bg-gray-900 transition-colors">
-                Continuar
+                Solicitar beca
               </button>
             </div>
           </aside>

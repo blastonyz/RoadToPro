@@ -3,20 +3,60 @@
 import { DashboardNavbar } from "@/components/dashboard/DashboardNavbar";
 import { Footer } from "@/components/layout/footer/Footer";
 import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { api } from "@/lib/api";
 
 export default function ScorePage() {
-  const overallScore = 78;
-  const maintainedDays = 24;
-  const isInvertible = overallScore >= 70 && maintainedDays >= 30;
+  const [overallScore, setOverallScore] = useState<number>(0);
+  const [maintainedDays, setMaintainedDays] = useState<number>(0);
+  const [isInvertible, setIsInvertible] = useState<boolean>(false);
+  const [pillars, setPillars] = useState<
+    { name: string; value: number; color: string }[]
+  >([
+    { name: "Habilidad técnica", value: 0, color: "bg-blue-500" },
+    { name: "Condición física", value: 0, color: "bg-green-500" },
+    { name: "Compromiso", value: 0, color: "bg-yellow-500" },
+    { name: "Transparencia", value: 0, color: "bg-purple-500" },
+    { name: "Reputación", value: 0, color: "bg-orange-500" },
+  ]);
 
-  const pillars = [
-    { name: "Habilidad técnica", value: 82, color: "bg-blue-500" },
-    { name: "Condición física", value: 75, color: "bg-green-500" },
-    { name: "Compromiso", value: 80, color: "bg-yellow-500" },
-    { name: "Transparencia", value: 90, color: "bg-purple-500" },
-    { name: "Reputación", value: 68, color: "bg-orange-500" },
-  ];
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [score, level] = await Promise.all([
+          api.players.getScore(),
+          api.players.getLevel(),
+        ]);
+        if (!mounted) return;
+        setOverallScore(Math.round(score.overall ?? 0));
+        setPillars(() => {
+          const comps = score.components ?? {};
+          return [
+            { name: "Habilidad técnica", value: Math.round(comps.technical ?? 0), color: "bg-blue-500" },
+            { name: "Condición física", value: Math.round(comps.physical ?? 0), color: "bg-green-500" },
+            { name: "Compromiso", value: Math.round(comps.commitment ?? 0), color: "bg-yellow-500" },
+            { name: "Transparencia", value: Math.round(comps.transparency ?? 0), color: "bg-purple-500" },
+            { name: "Reputación", value: Math.round(comps.reputation ?? 0), color: "bg-orange-500" },
+          ];
+        });
+        const sustainedSince = level.sustainedSince ? new Date(level.sustainedSince) : null;
+        const today = new Date();
+        const days =
+          sustainedSince && !isNaN(sustainedSince.getTime())
+            ? Math.max(0, Math.floor((today.getTime() - sustainedSince.getTime()) / (1000 * 60 * 60 * 24)))
+            : 0;
+        setMaintainedDays(days);
+        setIsInvertible(level.sustainedEligibility === true && (score.overall ?? 0) >= 70 && days >= 30);
+      } catch {
+        // deja valores por defecto en caso de error
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const howToImprove = [
     "Retos diarios aprobados",
@@ -30,11 +70,6 @@ export default function ScorePage() {
   return (
     <div className="min-h-screen bg-white space-y-12">
       <DashboardNavbar
-        link={{
-          label: "Subir Video",
-          href: "/dashboard/challenges/upload",
-          icon: <Plus />,
-        }}
         returnData={{ label: "Volver al panel", href: "/dashboard" }}
       />
 
@@ -130,17 +165,23 @@ export default function ScorePage() {
           <div className="space-y-6">
             <div className="bg-blue-50 border border-blue-200 p-6 rounded-2xl">
               <h4 className="text-lg font-bold text-blue-900 mb-2">
-                ¿Quieres activar tu Plan PRO?
+                ¿Quieres solicitar la Beca PRO?
               </h4>
               <p className="text-blue-800 text-sm mb-4">
-                Mantén tu puntaje ≥ 70 por 30 días para desbloquear el plan
-                personalizado con IA.
+                Mantén tu puntaje ≥ 70 por 30 días para ser elegible y acceder
+                al plan personalizado con IA mediante beca.
               </p>
               <Link
                 href="/dashboard/pro/plan"
                 className="inline-flex items-center justify-center w-full bg-black text-white px-6 py-3 rounded-full font-bold hover:bg-gray-900 transition-colors"
               >
-                Ver Plan PRO
+                Ver Plan y Beca
+              </Link>
+              <Link
+                href="/dashboard/score/history"
+                className="inline-flex items-center justify-center w-full mt-3 bg-gray-100 text-gray-800 px-6 py-3 rounded-full font-bold hover:bg-gray-200 transition-colors"
+              >
+                Ver historial
               </Link>
             </div>
           </div>

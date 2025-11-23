@@ -196,7 +196,7 @@ export function MatchesSection() {
                     </div>
                   </div>
                   {match.action && (
-                    <button className="flex flex-row flex-nowrap gap-2 text-xs w-fit bg-black text-white py-2 px-3 rounded-full hover:bg-gray-800 transition-colors">
+                    <button className="cursor-pointer transition duration-200 flex flex-row flex-nowrap gap-2 text-xs w-fit bg-black text-white py-2 px-3 rounded-full hover:bg-gray-800">
                       {match.action} <ArrowRight size={16} />
                     </button>
                   )}

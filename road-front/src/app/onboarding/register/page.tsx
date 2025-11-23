@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { OnboardingHeader } from "@/components/onboarding/OnboardingHeader";
+import { api, setTokens } from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -14,11 +15,32 @@ export default function RegisterPage() {
     password: "",
     confirmPassword: "",
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here would go the actual registration logic
-    router.push("/onboarding/role-selection");
+    setError(null);
+    if (formData.password !== formData.confirmPassword) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const resp = await api.auth.register({
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+      });
+      setTokens({ accessToken: resp.accessToken, refreshToken: resp.refreshToken });
+      router.push("/onboarding/role-selection");
+    } catch (err: unknown) {
+      const fallback = "Error al crear la cuenta. Intenta nuevamente.";
+      const message = err instanceof Error && err.message ? err.message : fallback;
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -36,7 +58,7 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <div className="space-y-3">
+          {/* <div className="space-y-3">
             <button className="cursor-pointer w-full flex items-center justify-center gap-3 border-2 border-gray-200 rounded-full px-6 py-3 hover:border-black transition-colors">
               <Image
                 src="/assets/images/logos/google.webp"
@@ -56,18 +78,23 @@ export default function RegisterPage() {
               />
               <span className="font-semibold">Continuar con Apple</span>
             </button>
-          </div>
+          </div> */}
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">o con email</span>
+            <span className="px-4 bg-white text-gray-500">Regístrate con tu email</span>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+                {error}
+              </div>
+            )}
             <div>
               <label
                 htmlFor="fullName"
@@ -150,9 +177,10 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              className="cursor-pointer w-full bg-black text-white py-4 rounded-full font-bold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 group"
+              disabled={submitting}
+              className="cursor-pointer w-full bg-black text-white py-4 rounded-full font-bold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 group disabled:opacity-60"
             >
-              Crear cuenta
+              {submitting ? "Creando cuenta..." : "Crear cuenta"}
               <svg
                 className="w-5 h-5 transition-transform group-hover:translate-x-1"
                 fill="none"

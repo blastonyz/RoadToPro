@@ -2,12 +2,42 @@ import { ethers } from "hardhat";
 
 /**
  * Script de ejemplo para interactuar con ClubToken
+ * 
+ * Usage:
+ *   npx hardhat run scripts/interact-club-token.ts --network <network>
+ *   CLUB_TOKEN_CONTRACT=0x... npx hardhat run scripts/interact-club-token.ts --network <network>
+ *   npx hardhat run scripts/interact-club-token.ts --network <network> -- 0x...
  */
 
 async function main() {
-  const contractAddress = process.env.CLUB_TOKEN_CONTRACT;
+  // Get contract address from env, command line args, or use default from recent deployment
+  let contractAddress = process.env.CLUB_TOKEN_CONTRACT;
+  
+  // Check command line arguments (after --)
+  if (!contractAddress && process.argv.length > 2) {
+    const args = process.argv.slice(2);
+    const addressArg = args.find(arg => arg.startsWith('0x') && arg.length === 42);
+    if (addressArg) {
+      contractAddress = addressArg;
+    }
+  }
+
   if (!contractAddress) {
-    throw new Error("CLUB_TOKEN_CONTRACT not set in .env");
+    console.error("\n❌ Error: CLUB_TOKEN_CONTRACT not set");
+    console.error("\n📝 Options:");
+    console.error("   1. Set CLUB_TOKEN_CONTRACT in your .env file:");
+    console.error("      CLUB_TOKEN_CONTRACT=0x83ab6C28388be272379546946afabd7F15541464");
+    console.error("\n   2. Pass as environment variable:");
+    console.error("      CLUB_TOKEN_CONTRACT=0x... npx hardhat run scripts/interact-club-token.ts --network spicy");
+    console.error("\n   3. Pass as command line argument:");
+    console.error("      npx hardhat run scripts/interact-club-token.ts --network spicy -- 0x83ab6C28388be272379546946afabd7F15541464");
+    console.error("\n💡 Recent deployment address: 0x83ab6C28388be272379546946afabd7F15541464");
+    throw new Error("CLUB_TOKEN_CONTRACT not provided");
+  }
+
+  // Validate address format
+  if (!ethers.isAddress(contractAddress)) {
+    throw new Error(`Invalid contract address: ${contractAddress}`);
   }
 
   console.log("⚽ Interacting with ClubToken at:", contractAddress);
@@ -17,12 +47,25 @@ async function main() {
   const clubToken = ClubToken.attach(contractAddress);
 
   // Get signers
-  const [owner, fan1, fan2] = await ethers.getSigners();
+  const signers = await ethers.getSigners();
+  const owner = signers[0];
+  const fan1 = signers[1] || signers[0]; // Use owner if fan1 not available
+  const fan2 = signers[2] || signers[0]; // Use owner if fan2 not available
 
   console.log("\n👤 Signers:");
   console.log("- Owner (Club):", owner.address);
-  console.log("- Fan 1:", fan1.address);
-  console.log("- Fan 2:", fan2.address);
+  const balance = await ethers.provider.getBalance(owner.address);
+  console.log("- Account balance:", ethers.formatEther(balance), "ETH");
+  if (signers.length > 1) {
+    console.log("- Fan 1:", fan1.address);
+  } else {
+    console.log("- Fan 1: (using owner address - only one signer available)");
+  }
+  if (signers.length > 2) {
+    console.log("- Fan 2:", fan2.address);
+  } else {
+    console.log("- Fan 2: (using owner address - only one signer available)");
+  }
 
   // Get initial contract info
   const info = await clubToken.getContractInfo();
