@@ -82,6 +82,44 @@ export class ProfileController {
     return this.profileService.updatePlayerProfile(req.user.id, dto);
   }
 
+  @Post('player/rating')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Registrar snapshot de rating OL del jugador' })
+  @ApiResponse({ status: 201, description: 'Snapshot registrado y nivel recalculado' })
+  async recordPlayerRating(@Request() req, @Body() body: import('./dto/index.js').RecordPlayerRatingDto) {
+    return this.profileService.recordPlayerRating(req.user.id, body);
+  }
+
+  @Get('player/level')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener nivel actual del jugador y elegibilidad (≥70 por 30 días)' })
+  async getPlayerLevel(@Request() req) {
+    return this.profileService.getPlayerLevel(req.user.id);
+  }
+
+  @Get('player/rating-history')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Historial de rating OL del jugador' })
+  async getPlayerRatingHistory(
+    @Request() req,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.profileService.getPlayerRatingHistory(req.user.id, { from, to, limit: limit ? Number(limit) : undefined });
+  }
+
+  @Get('player/score')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Puntaje actual del jugador para dashboard (overall, categoría, delta semanal, componentes)' })
+  async getPlayerScore(@Request() req) {
+    return this.profileService.getPlayerScore(req.user.id);
+  }
+
   @Get('players')
   @ApiOperation({ summary: 'Listar todos los jugadores' })
   @ApiQuery({ name: 'skip', required: false, type: Number, description: 'Número de registros a saltar' })

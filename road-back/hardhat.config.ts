@@ -1,38 +1,48 @@
-import hardhatToolboxMochaEthersPlugin from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
-import { configVariable, defineConfig } from "hardhat/config";
+import { HardhatUserConfig } from 'hardhat/config.js';
+import '@nomicfoundation/hardhat-toolbox';
+import * as dotenv from 'dotenv';
 
-export default defineConfig({
-  plugins: [hardhatToolboxMochaEthersPlugin],
+dotenv.config();
+
+const config: HardhatUserConfig = {
   solidity: {
-    profiles: {
-      default: {
-        version: "0.8.28",
-      },
-      production: {
-        version: "0.8.28",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
+    version: '0.8.20',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
       },
     },
   },
   networks: {
-    hardhatMainnet: {
-      type: "edr-simulated",
-      chainType: "l1",
+    hardhat: {
+      chainId: 1337,
     },
-    hardhatOp: {
-      type: "edr-simulated",
-      chainType: "op",
+    localhost: {
+      url: 'http://127.0.0.1:8545',
     },
-    sepolia: {
-      type: "http",
-      chainType: "l1",
-      url: configVariable("SEPOLIA_RPC_URL"),
-      accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
+    spicy: {
+      url: process.env.RPC_URL || 'https://spicy-rpc.chiliz.com/',
+      accounts: ((): string[] => {
+        const pk = process.env.CHZ_PK || '';
+        if (!pk) return [];
+        if (pk.length === 66 && pk.startsWith('0x')) return [pk];
+        if (pk.length === 64) return [`0x${pk}`];
+        return [];
+      })(),
     },
+    // Polkadot-compatible EVM parachain (e.g., Moonbase Alpha, Moonbeam, Astar).
+    // Set `POLKADOT_RPC_URL` and optional `POLKADOT_CHAIN_ID` in your .env before deploying.
   },
-});
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
+  },
+  paths: {
+    sources: './contracts',
+    tests: './test/contracts',
+    cache: './cache',
+    artifacts: './artifacts',
+  },
+};
+
+export default config;

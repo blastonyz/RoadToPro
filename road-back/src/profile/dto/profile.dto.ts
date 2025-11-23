@@ -248,3 +248,76 @@ export class UpdatePlayerProfileDto {
   @IsOptional()
   achievements?: any;
 }
+
+export class RecordPlayerRatingDto {
+  @ApiProperty({ description: 'Habilidad técnica (0-100)', example: 72 })
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  technical: number;
+
+  @ApiProperty({ description: 'Condición física (0-100)', example: 68 })
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  physical: number;
+
+  @ApiProperty({ description: 'Compromiso (0-100)', example: 80 })
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  commitment: number;
+
+  @ApiProperty({ description: 'Transparencia (0-100)', example: 90 })
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  transparency: number;
+
+  @ApiProperty({ description: 'Reputación (0-100)', example: 75 })
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  reputation: number;
+
+  @ApiPropertyOptional({ description: 'Fuente del snapshot', example: 'challenge' })
+  @IsString()
+  @IsOptional()
+  source?: string;
+}
+
+export class PlayerLevelResponse {
+  @ApiProperty({ description: 'Nivel actual', example: 'PRO' })
+  level: 'BASE' | 'PRO' | 'INVERTIBLE' | 'CONTRACT';
+
+  @ApiProperty({ description: 'OL Index actual (0-100)', example: 74 })
+  overall: number;
+
+  @ApiProperty({ description: '¿Cumple la regla de ≥70 por 30 días?', example: true })
+  sustainedEligibility: boolean;
+
+  @ApiPropertyOptional({ description: 'Fecha desde que se sostiene ≥70', example: '2025-10-01T00:00:00.000Z' })
+  @IsOptional()
+  @IsString()
+  sustainedSince?: string;
+}
+
+export class PlayerScoreResponse {
+  @ApiProperty({ description: 'Puntaje global (0-100)', example: 78 })
+  overall: number;
+
+  @ApiProperty({ description: 'Categoría derivada del puntaje', example: 'Semi-Profesional' })
+  category: string;
+
+  @ApiProperty({ description: 'Variación de puntaje vs. hace 7 días', example: 3 })
+  deltaWeek: number;
+
+  @ApiProperty({ description: 'Componentes del índice OL (0-100 por componente)' })
+  components: {
+    technical: number;
+    physical: number;
+    commitment: number;
+    transparency: number;
+    reputation: number;
+  };
+}

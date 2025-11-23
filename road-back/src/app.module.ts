@@ -7,6 +7,13 @@ import { AuthModule } from './auth/auth.module.js';
 import { EmailModule } from './email/email.module.js';
 import { UploadModule } from './upload/upload.module.js';
 import { ProfileModule } from './profile/profile.module.js';
+import { NotificationModule } from './notification/notification.module.js';
+import { ChallengeModule } from './challenge/challenge.module.js';
+import { TasksModule } from './tasks/tasks.module.js';
+import { AdminModule } from './admin/admin.module.js';
+import { UserModule } from './user/user.module.js';
+import { CampaignModule } from './campaign/campaign.module.js';
+import { CouponModule } from './coupon/coupon.module.js';
 
 @Module({
   imports: [
@@ -18,6 +25,13 @@ import { ProfileModule } from './profile/profile.module.js';
     EmailModule,
     UploadModule,
     ProfileModule,
+    NotificationModule,
+    ChallengeModule,
+    TasksModule,
+    AdminModule,
+    UserModule,
+    CampaignModule,
+    CouponModule,
   ],
   controllers: [AppController],
   providers: [AppService],

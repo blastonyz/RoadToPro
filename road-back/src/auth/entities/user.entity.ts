@@ -13,6 +13,12 @@ export class UserEntity {
   @ApiProperty()
   isVerified: boolean;
 
+  @ApiProperty({ enum: ['USER', 'ADMIN', 'SUPER_ADMIN'] })
+  role: string;
+
+  @ApiProperty()
+  isSuperAdmin: boolean;
+
   @ApiProperty()
   createdAt: Date;
 

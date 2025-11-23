@@ -11,23 +11,32 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(uuid())
-  email      String   @unique
-  password   String
-  name       String?
-  isVerified Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String   @id @default(uuid())
+  email        String   @unique
+  password     String
+  name         String?
+  isVerified   Boolean  @default(false)
+  role         UserRole @default(USER)
+  isSuperAdmin Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  tournaments   Tournament[]
-  wallets       Wallet[]
-  tokens        Token[]
-  otpCodes      OtpCode[]
-  files         File[]
-  playerProfile PlayerProfile?
-  clubProfile   ClubProfile?
-  coachProfile  CoachProfile?
-  fanProfile    FanProfile?
+  tournaments             Tournament[]
+  wallets                 Wallet[]
+  tokens                  Token[]
+  otpCodes                OtpCode[]
+  files                   File[]
+  playerProfile           PlayerProfile?
+  clubProfile             ClubProfile?
+  coachProfile            CoachProfile?
+  fanProfile              FanProfile?
+  notifications           Notification[]
+  challengeSubmissions    ChallengeSubmission[]
+  campaigns               PlayerCampaign[] // Campañas donde el usuario es el jugador
+  createdCampaigns        PlayerCampaign[]          @relation("CampaignCreator") // Campañas creadas por el admin
+  ChallengeSubmissionVote ChallengeSubmissionVote[]
+  createdCoupons          Coupon[]              @relation("CouponCreator") // Cupones creados (solo super admin)
+  couponUsages            CouponUsage[]         @relation("CouponUser") // Historial de uso de cupones
 
   @@map("users")
 }
@@ -81,6 +90,12 @@ model OtpCode {
 enum TokenType {
   ACCESS
   REFRESH
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
 }
 
 model Tournament {
@@ -204,13 +219,48 @@ model PlayerProfile {
   statistics      Json? // Estadísticas del jugador
   achievements    Json? // Logros y premios
   isVerified      Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+
+  currentLevel        PlayerLevel            @default(BASE)
+  olIndexOverall      Int                    @default(0) // 0-100
+  olIndexTechnical    Int                    @default(0) // 0-100
+  olIndexPhysical     Int                    @default(0) // 0-100
+  olIndexCommitment   Int                    @default(0) // 0-100
+  olIndexTransparency Int                    @default(0) // 0-100
+  olIndexReputation   Int                    @default(0) // 0-100
+  ratingSnapshots     PlayerRatingSnapshot[]
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("player_profiles")
+}
+
+enum PlayerLevel {
+  BASE
+  PRO
+  INVERTIBLE
+  CONTRACT
+}
+
+model PlayerRatingSnapshot {
+  id           String   @id @default(uuid())
+  date         DateTime @default(now())
+  source       String   @default("system") // "challenge", "training", "manual", etc.
+  technical    Int
+  physical     Int
+  commitment   Int
+  transparency Int
+  reputation   Int
+  overall      Int
+  createdAt    DateTime @default(now())
+
+  playerProfileId String
+  playerProfile   PlayerProfile @relation(fields: [playerProfileId], references: [id], onDelete: Cascade)
+
+  @@index([playerProfileId, date])
+  @@map("player_rating_snapshots")
 }
 
 model ClubProfile {
@@ -277,4 +327,251 @@ model FanProfile {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("fan_profiles")
+}
+
+// ============================================
+// SISTEMA DE NOTIFICACIONES
+// ============================================
+
+enum NotificationType {
+  CHALLENGE_NEW // Nuevo reto disponible
+  CHALLENGE_ENDING // Reto próximo a expirar
+  CHALLENGE_EXPIRED // Reto expirado
+  SUBMISSION_APPROVED // Participación aprobada
+  SUBMISSION_REJECTED // Participación rechazada
+  TOURNAMENT_START // Torneo iniciado
+  TOURNAMENT_END // Torneo finalizado
+  ACHIEVEMENT // Nuevo logro desbloqueado
+  SYSTEM // Notificación del sistema
+  PROFILE_UPDATE // Actualización de perfil
+  WALLET_ACTIVITY // Actividad en wallet
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  title     String
+  message   String
+  data      Json? // Datos adicionales específicos del tipo
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ============================================
+// SISTEMA DE RETOS (CHALLENGES)
+// ============================================
+
+enum ChallengeDifficulty {
+  EASY // 24 horas
+  MEDIUM // 7 días
+  HARD // 14 días
+  EXTREME // 30 días
+}
+
+enum ChallengeStatus {
+  ACTIVE // Reto activo
+  EXPIRED // Reto expirado
+  COMPLETED // Reto completado (alcanzó objetivo)
+}
+
+model Challenge {
+  id              String              @id @default(uuid())
+  title           String
+  description     String
+  difficulty      ChallengeDifficulty
+  status          ChallengeStatus     @default(ACTIVE)
+  requiredActions Int                 @default(1) // Número de participaciones requeridas
+  rewards         Json? // Recompensas del reto
+  metadata        Json? // Datos adicionales (tags, categorías, etc.)
+  arkaFileId      String? // ID del archivo de referencia en Arka CDN
+  thumbnailUrl    String?
+  startDate       DateTime            @default(now())
+  expiresAt       DateTime // Fecha de expiración automática
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  submissions ChallengeSubmission[]
+
+  @@index([status, expiresAt])
+  @@index([difficulty])
+  @@map("challenges")
+}
+
+enum SubmissionStatus {
+  PENDING // En revisión
+  APPROVED // Aprobado
+  REJECTED // Rechazado
+}
+
+model ChallengeSubmission {
+  id           String           @id @default(uuid())
+  description  String?
+  arkaFileId   String // ID del video en Arka CDN
+  videoUrl     String // URL pública del video
+  thumbnailUrl String?
+  status       SubmissionStatus @default(PENDING)
+  score        Int? // Puntuación asignada
+  feedback     String? // Comentarios del staff
+  metadata     Json? // Datos adicionales
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  votes ChallengeSubmissionVote[]
+
+  @@unique([userId, challengeId]) // Un usuario solo puede enviar una participación por reto
+  @@index([challengeId, status])
+  @@index([userId])
+  @@map("challenge_submissions")
+}
+
+model ChallengeSubmissionVote {
+  id        String   @id @default(uuid())
+  value     Int // +1 (upvote) | -1 (downvote)
+  createdAt DateTime @default(now())
+
+  submissionId String
+  submission   ChallengeSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, submissionId]) // Un usuario solo puede votar una vez por participación
+  @@index([submissionId])
+  @@index([userId])
+  @@map("challenge_submission_votes")
+}
+
+// ============================================
+// SISTEMA DE CAMPAÑAS DE JUGADORES
+// ============================================
+
+enum CampaignStatus {
+  DRAFT // Borrador
+  ACTIVE // Activa
+  PAUSED // Pausada
+  COMPLETED // Completada
+  CANCELLED // Cancelada
+}
+
+model PlayerCampaign {
+  id                 String         @id @default(uuid())
+  // Información básica
+  title              String
+  description        String?
+  photoUrl           String? // Foto principal de la campaña
+  presentationVideo  String? // URL del video de presentación
+  // Rating OL del jugador
+  olRating           Int            @default(0) // Rating OL actual (ej: 78/100)
+  // Metas deportivas
+  sportingGoals      Json // Array de metas: [{goal: "Mejorar precisión de pase al 90%"}]
+  // Presupuesto desglosado
+  budget             Json // {nutrition: 200, personalTrainer: 350, travels: 300, equipment: 150, physiotherapy: 200, total: 1200}
+  // Cronograma/Timeline
+  timeline           Json // Array: [{date: "2025-02-01", milestone: "Semana 1: +2 puntos OL"}]
+  // Retos destacados verificados
+  featuredChallenges Json? // Array: [{name: "Control orientado bajo presión", category: "Técnica", points: 50, validated: true, validator: "Staff OL"}]
+  // Estado y fechas
+  status             CampaignStatus @default(DRAFT)
+  startDate          DateTime?
+  endDate            DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  // Relación con el jugador
+  playerId String
+  player   User   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  // Relación con quien creó la campaña (admin/super admin)
+  createdById String
+  createdBy   User   @relation("CampaignCreator", fields: [createdById], references: [id])
+
+  @@index([playerId])
+  @@index([status])
+  @@index([createdById])
+  @@map("player_campaigns")
+}
+
+// ============================================
+// SISTEMA DE CUPONES (ARKA CDN)
+// ============================================
+
+enum CouponType {
+  GAS_SPONSORSHIP // Cupón para sponsoreo de gas (como inversores)
+  FILE_UPLOAD // Cupón para subida de archivos
+  PREMIUM_FEATURE // Cupón para features premium
+}
+
+enum CouponStatus {
+  ACTIVE // Cupón activo y disponible
+  USED // Cupón completamente usado
+  EXPIRED // Cupón expirado
+  REVOKED // Cupón revocado manualmente
+}
+
+model Coupon {
+  id                String       @id @default(uuid())
+  code              String       @unique // Código único del cupón (ej: "PLAYER-2025-ABC123")
+  type              CouponType // Tipo de cupón
+  description       String? // Descripción del cupón
+  // Arka CDN relacionado
+  arkaPolicyId      String? // ID del policy creado en Arka CDN (para gas sponsorship)
+  arkaWalletAddress String? // Dirección de la wallet en Arka asociada al policy
+  // Uso y límites
+  maxUses           Int          @default(1) // Número máximo de usos permitidos
+  currentUses       Int          @default(0) // Número de usos actuales
+  maxAmountPerUse   Float? // Monto máximo por uso (para gas sponsorship)
+  // Fechas
+  expiresAt         DateTime? // Fecha de expiración (null = no expira)
+  status            CouponStatus @default(ACTIVE)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  // Relación con el creador (debe ser super admin)
+  createdById String
+  createdBy   User   @relation("CouponCreator", fields: [createdById], references: [id])
+
+  // Historial de uso
+  usages CouponUsage[]
+
+  @@index([code])
+  @@index([status, expiresAt])
+  @@index([type])
+  @@index([createdById])
+  @@map("coupons")
+}
+
+model CouponUsage {
+  id        String   @id @default(uuid())
+  // Información del uso
+  usedAt    DateTime @default(now())
+  amount    Float? // Monto usado (para gas sponsorship)
+  txHash    String? // Hash de transacción (si aplica)
+  metadata  Json? // Datos adicionales del uso
+  ipAddress String? // IP desde donde se usó
+
+  // Relación con el cupón
+  couponId String
+  coupon   Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  // Relación con el usuario que lo usó
+  userId String
+  user   User   @relation("CouponUser", fields: [userId], references: [id])
+
+  @@index([couponId])
+  @@index([userId])
+  @@index([usedAt])
+  @@map("coupon_usages")
 }

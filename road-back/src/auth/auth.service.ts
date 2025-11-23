@@ -4,6 +4,7 @@ import {
   ConflictException,
   BadRequestException,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -16,7 +17,7 @@ import { CdpClient } from '@coinbase/cdp-sdk';
 import { PolkadotWalletService } from './polkadot-wallet.service.js';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   private cdpClient: CdpClient;
 
   constructor(
@@ -35,6 +36,99 @@ export class AuthService {
         apiKeyId: cdpApiKeyId,
         apiKeySecret: cdpApiKeySecret,
       });
+    }
+  }
+
+  async onModuleInit() {
+    // Inicializar super admin al iniciar la aplicación
+    await this.initializeSuperAdmin();
+  }
+
+  /**
+   * Inicializa el super admin desde las variables de entorno
+   * Si el super admin no existe, lo crea automáticamente
+   */
+  private async initializeSuperAdmin() {
+    const superAdminEmail = this.configService.get('SUPER_ADMIN_EMAIL');
+    const superAdminPassword = this.configService.get('SUPER_ADMIN_PASSWORD');
+
+    if (!superAdminEmail || !superAdminPassword) {
+      console.warn('⚠️  SUPER_ADMIN_EMAIL o SUPER_ADMIN_PASSWORD no están configurados en .env');
+      return;
+    }
+
+    try {
+      // Verificar si el super admin ya existe
+      const existingSuperAdmin = await this.prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: superAdminEmail },
+            { isSuperAdmin: true }
+          ]
+        },
+      });
+
+      if (existingSuperAdmin) {
+        // Si existe pero no tiene el flag de super admin, actualizarlo
+        if (!existingSuperAdmin.isSuperAdmin) {
+          await this.prisma.user.update({
+            where: { id: existingSuperAdmin.id },
+            data: {
+              isSuperAdmin: true,
+              role: 'SUPER_ADMIN'
+            },
+          });
+          console.log('✅ Super admin actualizado correctamente');
+        } else {
+          console.log('✅ Super admin ya existe en el sistema');
+        }
+        return;
+      }
+
+      // Crear el super admin
+      const hashedPassword = await bcrypt.hash(superAdminPassword, 10);
+
+      // Crear Polkadot wallet para el super admin
+      const polkadotWallet = await this.polkadotWalletService.createWallet(superAdminPassword);
+      const encryptedMnemonic = await bcrypt.hash(polkadotWallet.mnemonic, 10);
+
+      await this.prisma.user.create({
+        data: {
+          email: superAdminEmail,
+          password: hashedPassword,
+          name: 'Super Admin',
+          isVerified: true,
+          isSuperAdmin: true,
+          role: 'SUPER_ADMIN',
+          wallets: {
+            create: [
+              {
+                address: polkadotWallet.address,
+                network: 'polkadot',
+                currency: 'DOT',
+                provider: 'polkadot',
+                isDefault: false,
+                encryptedJson: JSON.stringify(polkadotWallet.encryptedJson),
+                encryptedMnemonic: encryptedMnemonic,
+              },
+              {
+                address: polkadotWallet.evmAddress,
+                network: 'moonbeam',
+                currency: 'GLMR',
+                provider: 'moonbeam-evm',
+                isDefault: true,
+                encryptedJson: null,
+                encryptedMnemonic: encryptedMnemonic,
+              },
+            ],
+          },
+        },
+      });
+
+      console.log('✅ Super admin creado correctamente');
+      console.log(`📧 Email: ${superAdminEmail}`);
+    } catch (error) {
+      console.error('❌ Error al inicializar super admin:', error);
     }
   }
 
@@ -291,6 +385,8 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
+      role: user.role || 'USER',
+      isSuperAdmin: user.isSuperAdmin || false,
       type: 'access',
     };
 
@@ -334,6 +430,8 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
+        role: user.role || 'USER',
+        isSuperAdmin: user.isSuperAdmin || false,
         wallets: user.wallets.map((w) => ({
           address: w.address,
           network: w.network,
@@ -365,6 +463,8 @@ export class AuthService {
       const newPayload: JwtPayload = {
         sub: payload.sub,
         email: payload.email,
+        role: payload.role || 'USER',
+        isSuperAdmin: payload.isSuperAdmin || false,
         type: 'access',
       };
 

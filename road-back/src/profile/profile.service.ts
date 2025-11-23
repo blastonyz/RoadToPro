@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { CreatePlayerProfileDto, CreateClubProfileDto, CreateCoachProfileDto, CreateFanProfileDto, UpdatePlayerProfileDto } from './dto/index.js';
+import { CreatePlayerProfileDto, CreateClubProfileDto, CreateCoachProfileDto, CreateFanProfileDto, UpdatePlayerProfileDto, RecordPlayerRatingDto, PlayerLevelResponse, PlayerScoreResponse } from './dto/index.js';
 import { BlockchainService } from '../blockchain/blockchain.service.js';
 
 @Injectable()
@@ -107,6 +107,140 @@ export class ProfileService {
     return updated;
   }
 
+  private computeOverallFromComponents(components: {
+    technical: number;
+    physical: number;
+    commitment: number;
+    transparency: number;
+    reputation: number;
+  }): number {
+    const { technical, physical, commitment, transparency, reputation } = components;
+    return Math.round((technical + physical + commitment + transparency + reputation) / 5);
+  }
+
+  private async recomputeLevelAndEligibility(playerProfileId: string) {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const snapshots = await this.prisma.playerRatingSnapshot.findMany({
+      where: {
+        playerProfileId,
+        date: { gte: thirtyDaysAgo },
+      },
+      orderBy: { date: 'asc' },
+    });
+
+    const has30d = snapshots.length > 0;
+    const allAbove70 = has30d && snapshots.every((s) => s.overall >= 70);
+
+    const profile = await this.prisma.playerProfile.findUnique({ where: { id: playerProfileId } });
+    if (!profile) return;
+
+    let nextLevel = profile.currentLevel;
+
+    // Lógica simple de niveles:
+    // BASE -> PRO cuando overall >= 50
+    // PRO -> INVERTIBLE cuando regla de 30 días >= 70
+    // CONTRACT permanece si ya está
+    if (profile.currentLevel !== 'CONTRACT') {
+      if (allAbove70) {
+        nextLevel = 'INVERTIBLE' as any;
+      } else {
+        nextLevel = 'BASE' as any;
+      }
+    }
+
+    if (nextLevel !== profile.currentLevel) {
+      await this.prisma.playerProfile.update({
+        where: { id: playerProfileId },
+        data: { currentLevel: nextLevel },
+      });
+    }
+  }
+
+  async recordPlayerRating(userId: string, dto: RecordPlayerRatingDto) {
+    const profile = await this.prisma.playerProfile.findUnique({ where: { userId } });
+    if (!profile) {
+      throw new NotFoundException('Player profile not found');
+    }
+
+    const overall = this.computeOverallFromComponents(dto);
+
+    await this.prisma.playerRatingSnapshot.create({
+      data: {
+        playerProfileId: profile.id,
+        source: dto.source ?? 'system',
+        technical: dto.technical,
+        physical: dto.physical,
+        commitment: dto.commitment,
+        transparency: dto.transparency,
+        reputation: dto.reputation,
+        overall,
+      },
+    });
+
+    await this.prisma.playerProfile.update({
+      where: { id: profile.id },
+      data: {
+        olIndexTechnical: dto.technical,
+        olIndexPhysical: dto.physical,
+        olIndexCommitment: dto.commitment,
+        olIndexTransparency: dto.transparency,
+        olIndexReputation: dto.reputation,
+        olIndexOverall: overall,
+      },
+    });
+
+    await this.recomputeLevelAndEligibility(profile.id);
+
+    return this.getPlayerLevel(userId);
+  }
+
+  async getPlayerLevel(userId: string): Promise<PlayerLevelResponse> {
+    const profile = await this.prisma.playerProfile.findUnique({ where: { userId } });
+    if (!profile) {
+      throw new NotFoundException('Player profile not found');
+    }
+
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const snapshots = await this.prisma.playerRatingSnapshot.findMany({
+      where: { playerProfileId: profile.id, date: { gte: thirtyDaysAgo } },
+      orderBy: { date: 'asc' },
+    });
+
+    let sustainedEligibility = false;
+    let sustainedSince: string | undefined;
+    if (snapshots.length > 0 && snapshots.every((s) => s.overall >= 70)) {
+      sustainedEligibility = true;
+      sustainedSince = snapshots[0].date.toISOString();
+    }
+
+    return {
+      level: profile.currentLevel as any,
+      overall: profile.olIndexOverall,
+      sustainedEligibility,
+      sustainedSince,
+    };
+  }
+
+  async getPlayerRatingHistory(userId: string, params?: { from?: string; to?: string; limit?: number }) {
+    const profile = await this.prisma.playerProfile.findUnique({ where: { userId } });
+    if (!profile) {
+      throw new NotFoundException('Player profile not found');
+    }
+
+    const where: any = { playerProfileId: profile.id };
+    if (params?.from || params?.to) {
+      where.date = {};
+      if (params.from) where.date.gte = new Date(params.from);
+      if (params.to) where.date.lte = new Date(params.to);
+    }
+
+    return this.prisma.playerRatingSnapshot.findMany({
+      where,
+      orderBy: { date: 'desc' },
+      take: params?.limit ?? 100,
+    });
+  }
   async updatePlayerNFTInfo(userId: string, nftTokenId: string, contractAddress: string) {
     const profile = await this.prisma.playerProfile.findUnique({
       where: { userId },
@@ -463,5 +597,49 @@ export class ProfileService {
 
     this.logger.log(`${profileType} profile deleted for user ${userId}`);
     return { message: `${profileType} profile deleted successfully` };
+  }
+
+  // ============================
+  // Puntaje (vista tipo dashboard)
+  // ============================
+  async getPlayerScore(userId: string): Promise<PlayerScoreResponse> {
+    const profile = await this.prisma.playerProfile.findUnique({ where: { userId } });
+    if (!profile) {
+      throw new NotFoundException('Player profile not found');
+    }
+
+    const overall = profile.olIndexOverall;
+
+    // Delta semanal: comparar con snapshot inmediatamente anterior a hace 7 días
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const pastSnap = await this.prisma.playerRatingSnapshot.findFirst({
+      where: { playerProfileId: profile.id, date: { lte: sevenDaysAgo } },
+      orderBy: { date: 'desc' },
+    });
+    const deltaWeek = pastSnap ? overall - pastSnap.overall : 0;
+
+    const category = this.getCategoryFromOverall(overall);
+
+    return {
+      overall,
+      category,
+      deltaWeek,
+      components: {
+        technical: profile.olIndexTechnical,
+        physical: profile.olIndexPhysical,
+        commitment: profile.olIndexCommitment,
+        transparency: profile.olIndexTransparency,
+        reputation: profile.olIndexReputation,
+      },
+    };
+  }
+
+  private getCategoryFromOverall(overall: number): string {
+    if (overall >= 95) return 'Élite';
+    if (overall >= 85) return 'Profesional';
+    if (overall >= 70) return 'Semi-Profesional';
+    if (overall >= 60) return 'Pre-Profesional';
+    if (overall >= 40) return 'Promesa';
+    return 'Amateur';
   }
 }

@@ -4,7 +4,7 @@ async function main() {
   // Parámetros del club (personalizar según necesidad)
   const clubName = process.env.CLUB_NAME || "Real Madrid CF";
   const tokenSymbol = process.env.CLUB_SYMBOL || "RMD"; // 3 letras
-  const initialSupply = ethers.parseEther(process.env.INITIAL_SUPPLY || "1000000"); // 1 millón
+  const initialSupply = ethers.parseEther("10000000000"); // 1 millón
 
   console.log("🚀 Deploying ClubToken contract...");
   console.log(`\n⚽ Club Details:`);
@@ -14,7 +14,8 @@ async function main() {
 
   // Get the contract factory
   const ClubToken = await ethers.getContractFactory("ClubToken");
-
+ 
+  
   // Deploy the contract
   const clubToken = await ClubToken.deploy(clubName, tokenSymbol, initialSupply);
   await clubToken.waitForDeployment();
