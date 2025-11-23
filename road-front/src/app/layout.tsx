@@ -10,8 +10,8 @@ const monaSans = Mona_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Open League",
-  description: "Open League",
+  title: "Road To Pro",
+  description: "Road To Pro",
 };
 
 export default function RootLayout({
